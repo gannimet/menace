@@ -8,14 +8,11 @@
   </tr>
 </table>
 
-<div>
+<div *ngIf="!result">
   Whose turn is it?
   <strong>{{ board.whoseTurn === SquareState.Menace ? 'Menace' : 'Player' }}</strong>
 </div>
 
-<div *ngIf="board.checkDraw()">
-  UNENTSCHIEDEN!
-</div>
-<div *ngIf="board.checkWinner()">
-  Gewonnen hat: <strong>{{ board.checkWinner() === SquareState.Menace ? 'Menace' : 'Player' }}</strong>
+<div *ngIf="result">
+  <strong>{{ result | result }}</strong>
 </div>

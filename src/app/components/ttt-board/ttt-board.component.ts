@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Board, SquareState, convertFieldCoordinatesToIndex, Menace } from '../../menace/menace';
+import { Board, SquareState, convertFieldCoordinatesToIndex, Menace, Result } from '../../menace/menace';
 
 @Component({
   selector: 'app-ttt-board',
@@ -12,20 +12,27 @@ export class TttBoardComponent implements OnInit {
   menace = new Menace(this.board);
   SquareState = SquareState;
   convertFieldCoordinatesToIndex = convertFieldCoordinatesToIndex;
+  result: Result;
 
   constructor() { }
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.board.resultEvents.subscribe((result: Result) => {
+      this.result = result;
+    });
+  }
 
   cellClicked(row: number, col: number) {
-    if (this.board.whoseTurn !== SquareState.Player) {
+    if (this.board.whoseTurn !== SquareState.Player && !this.result) {
       return;
     }
 
     this.board.recordMove(row, col);
 
     setTimeout(() => {
-      this.menace.takeTurn();
+      if (!this.result) {
+        this.menace.takeTurn();
+      }
     }, 2000);
   }
 

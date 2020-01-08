@@ -1,4 +1,5 @@
 import permutationMappings from '../../assets/permutation-mappings.json';
+import { EventEmitter } from '@angular/core';
 
 export enum SquareState {
   Menace = 'X',
@@ -24,45 +25,52 @@ export interface BeadDescriptor {
   numberOfBeads: number;
 }
 
+export enum Result {
+  Menace = 'Menace',
+  Player = 'Player',
+  Draw = 'Draw',
+}
+
 export class Board {
 
   state: SquareState[];
   whoseTurn = SquareState.Player;
+  resultEvents = new EventEmitter<Result>();
 
   constructor() {
     this.reset();
   }
 
-  checkWinner(): SquareState | undefined {
+  checkResult(): Result | undefined {
     if (this.state[0] !== SquareState.Free) {
       if (this.state[0] === this.state[1] && this.state[0] === this.state[2]) {
-        return this.state[0];
+        return this.squareStateToResult(this.state[0]);
       }
 
       if (this.state[0] === this.state[3] && this.state[0] === this.state[6]) {
-        return this.state[0];
+        return this.squareStateToResult(this.state[0]);
       }
 
       if (this.state[0] === this.state[4] && this.state[0] === this.state[8]) {
-        return this.state[0];
+        return this.squareStateToResult(this.state[0]);
       }
     }
 
     if (this.state[8] !== SquareState.Free) {
       if (this.state[8] === this.state[5] && this.state[8] === this.state[2]) {
-        return this.state[8];
+        return this.squareStateToResult(this.state[8]);
       }
 
       if (this.state[8] === this.state[7] && this.state[8] === this.state[6]) {
-        return this.state[8];
+        return this.squareStateToResult(this.state[8]);
       }
     }
 
-    return undefined;
-  }
+    if (this.getPossibleMoves().length === 0) {
+      return Result.Draw;
+    }
 
-  checkDraw(): boolean {
-    return !this.checkWinner() && this.getPossibleMoves().length === 0;
+    return undefined;
   }
 
   reset() {
@@ -87,7 +95,7 @@ export class Board {
   }
 
   recordMove(row: number, col: number): boolean {
-    if (this.checkWinner() || this.checkDraw()) {
+    if (this.checkResult()) {
       return false;
     }
 
@@ -108,6 +116,13 @@ export class Board {
       this.whoseTurn = SquareState.Player;
     } else {
       this.whoseTurn = SquareState.Menace;
+    }
+
+    // Check whether the game is decided
+    const result = this.checkResult();
+    if (result) {
+      console.log('Game resulted in:', result);
+      this.resultEvents.emit(result);
     }
 
     return true;
@@ -148,6 +163,16 @@ export class Board {
       .filter((index: number) => {
         return index > -1;
       });
+  }
+
+  private squareStateToResult(state: SquareState): Result | undefined {
+    if (state === SquareState.Menace) {
+      return Result.Menace;
+    }
+
+    if (state === SquareState.Player) {
+      return Result.Player;
+    }
   }
 
 }
