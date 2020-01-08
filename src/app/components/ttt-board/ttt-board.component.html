@@ -1,0 +1,21 @@
+<table>
+  <tr *ngFor="let row of [0, 1, 2]">
+    <td
+      *ngFor="let col of [0, 1, 2]"
+      (click)="cellClicked(row, col)">
+      {{ board.state[convertFieldCoordinatesToIndex(row, col)] }}
+    </td>
+  </tr>
+</table>
+
+<div>
+  Whose turn is it?
+  <strong>{{ board.whoseTurn === SquareState.Menace ? 'Menace' : 'Player' }}</strong>
+</div>
+
+<div *ngIf="board.checkDraw()">
+  UNENTSCHIEDEN!
+</div>
+<div *ngIf="board.checkWinner()">
+  Gewonnen hat: <strong>{{ board.checkWinner() === SquareState.Menace ? 'Menace' : 'Player' }}</strong>
+</div>
