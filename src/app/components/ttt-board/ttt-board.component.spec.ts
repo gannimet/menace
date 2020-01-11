@@ -1,6 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { MockPipe } from 'ng-mocks';
 import { TttBoardComponent } from './ttt-board.component';
+import { ResultPipe } from '../../pipes/result.pipe';
 
 describe('TttBoardComponent', () => {
   let component: TttBoardComponent;
@@ -8,7 +9,10 @@ describe('TttBoardComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ TttBoardComponent ]
+      declarations: [
+        TttBoardComponent,
+        MockPipe(ResultPipe),
+      ]
     })
     .compileComponents();
   }));

@@ -42,28 +42,35 @@ export class Board {
   }
 
   checkResult(): Result | undefined {
-    if (this.state[0] !== SquareState.Free) {
-      if (this.state[0] === this.state[1] && this.state[0] === this.state[2]) {
-        return this.squareStateToResult(this.state[0]);
+    const winningLines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+    let winner: Result;
+
+    winningLines.forEach((line: number[]) => {
+      if (winner) {
+        // break out of for loop early if we already found a winner
+        return;
       }
 
-      if (this.state[0] === this.state[3] && this.state[0] === this.state[6]) {
-        return this.squareStateToResult(this.state[0]);
-      }
+      const isWinningLine = line
+        .map((fieldIndex: number) => {
+          return this.state[fieldIndex];
+        })
+        .every((current: SquareState) => {
+          return current !== SquareState.Free &&
+            current === this.state[line[0]];
+        });
 
-      if (this.state[0] === this.state[4] && this.state[0] === this.state[8]) {
-        return this.squareStateToResult(this.state[0]);
+      if (isWinningLine) {
+        winner = this.squareStateToResult(this.state[line[0]]);
       }
-    }
+    });
 
-    if (this.state[8] !== SquareState.Free) {
-      if (this.state[8] === this.state[5] && this.state[8] === this.state[2]) {
-        return this.squareStateToResult(this.state[8]);
-      }
-
-      if (this.state[8] === this.state[7] && this.state[8] === this.state[6]) {
-        return this.squareStateToResult(this.state[8]);
-      }
+    if (winner) {
+      return winner;
     }
 
     if (this.getPossibleMoves().length === 0) {
@@ -79,6 +86,7 @@ export class Board {
       SquareState.Free, SquareState.Free, SquareState.Free,
       SquareState.Free, SquareState.Free, SquareState.Free,
     ];
+    this.whoseTurn = SquareState.Player;
   }
 
   getNumberRepresentation(): number {
@@ -87,7 +95,7 @@ export class Board {
       .map((fieldState: SquareState, index: number) => {
         return [
           SquareState.Free, SquareState.Player, SquareState.Menace
-        ].indexOf(fieldState) * Math.pow(3, 8 - index);
+        ].indexOf(fieldState) * Math.pow(3, index);
       })
       .reduce((previous: number, current: number) => {
         return previous + current;
@@ -128,28 +136,6 @@ export class Board {
     return true;
   }
 
-  print() {
-    let result = '';
-
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
-        result += ` ${this.state[row * 3 + col]} `;
-
-        if (col < 2) {
-          result += '|';
-        }
-      }
-
-      result += '\n';
-
-      if (row < 2) {
-        result += '-'.repeat(11) + '\n';
-      }
-    }
-
-    console.log(result);
-  }
-
   getPossibleMoves(): number[] {
     return this
       .state
@@ -180,42 +166,67 @@ export class Board {
 export class Menace {
 
   beadMap: Map<number, BeadDescriptor[]> = new Map([]);
+  currentGameRecord: Map<number, any[]> = new Map([]);
 
-  constructor(private board: Board) {}
+  constructor(private board: Board) {
+    this.init();
+  }
+
+  private init() {
+    this.board.resultEvents.subscribe((result: Result) => {
+      const successForMenace = [Result.Menace, Result.Draw].includes(result);
+
+      if (!successForMenace) {
+        this.currentGameRecord.forEach((permutationInfo: any[], boardNumber: number) => {
+
+        });
+      }
+    });
+  }
 
   takeTurn() {
     console.group('MENACE\'S TURN');
     const boardNumber = this.board.getNumberRepresentation();
     console.log('board number:', boardNumber);
     const permutationInfo = permutationMappings[`${boardNumber}`];
-    const referenceBoardNumber = permutationInfo[0];
-    console.log('reference board number:', referenceBoardNumber, 'with index mapping:', permutationInfo[1]);
-    const beadList = this.getBeadsForBoardNumber(referenceBoardNumber);
+    console.log(
+      'which is a permutation of reference board number:',
+      permutationInfo[0],
+      'with index mapping:',
+      permutationInfo[1]
+    );
+    const beadList = this.getBeadsForReferenceBoard(permutationInfo);
     console.log('bead list for reference board:', beadList);
 
-    // Pick bead at random
+    // Pick move at random
     const randomMove = beadList[Math.floor(Math.random() * beadList.length)]; // TODO: consider weighted random picking
     console.log('randomMove:', randomMove);
-    const fieldCoords = convertIndexToFieldCoordinates(randomMove.field);
+    const translatedIndex = permutationInfo[1].indexOf(randomMove.field);
+    console.log('translatedIndex:', translatedIndex);
+    const fieldCoords = convertIndexToFieldCoordinates(translatedIndex);
     console.log('field coords for random move:', fieldCoords);
 
     this.board.recordMove(fieldCoords.row, fieldCoords.col);
+    this.currentGameRecord.set(randomMove.field, permutationInfo);
     console.groupEnd();
   }
 
-  private getBeadsForBoardNumber(referenceNumber: number): BeadDescriptor[] {
-    if (!this.beadMap.has(referenceNumber)) {
-      const beadDescriptorList: BeadDescriptor[] = this.board.getPossibleMoves().map((freeIndex: number) => {
-        return {
-          field: freeIndex,
-          numberOfBeads: 3,
-        };
-      });
+  private getBeadsForReferenceBoard(permutationInfo: any[]): BeadDescriptor[] {
+    if (!this.beadMap.has(permutationInfo[0])) {
+      const beadDescriptorList: BeadDescriptor[] = this
+        .board
+        .getPossibleMoves()
+        .map((physicalIndex: number) => {
+          return {
+            field: permutationInfo[1][physicalIndex],
+            numberOfBeads: 3,
+          };
+        });
 
-      this.beadMap.set(referenceNumber, beadDescriptorList);
+      this.beadMap.set(permutationInfo[0], beadDescriptorList);
     }
 
-    return this.beadMap.get(referenceNumber);
+    return this.beadMap.get(permutationInfo[0]);
   }
 
 }

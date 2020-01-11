@@ -1,6 +1,9 @@
 import { TestBed, async } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+import { MockComponent, MockPipe } from 'ng-mocks';
 import { AppComponent } from './app.component';
+import { TttBoardComponent } from './components/ttt-board/ttt-board.component';
+import { ResultPipe } from './pipes/result.pipe';
 
 describe('AppComponent', () => {
   beforeEach(async(() => {
@@ -9,7 +12,9 @@ describe('AppComponent', () => {
         RouterTestingModule
       ],
       declarations: [
-        AppComponent
+        AppComponent,
+        MockComponent(TttBoardComponent),
+        MockPipe(ResultPipe),
       ],
     }).compileComponents();
   }));
@@ -18,18 +23,5 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
     expect(app).toBeTruthy();
-  });
-
-  it(`should have as title 'menace-frontend'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual('menace-frontend');
-  });
-
-  it('should render title in a h1 tag', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('h1').textContent).toContain('Welcome to menace-frontend!');
   });
 });

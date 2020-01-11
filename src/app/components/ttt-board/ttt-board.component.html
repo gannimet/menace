@@ -13,6 +13,10 @@
   <strong>{{ board.whoseTurn === SquareState.Menace ? 'Menace' : 'Player' }}</strong>
 </div>
 
-<div *ngIf="result">
+<div class="result-container" *ngIf="result">
   <strong>{{ result | result }}</strong>
+</div>
+
+<div class="finish-game-container">
+  <button (click)="nextGame()" [disabled]="!result">Next game</button>
 </div>
