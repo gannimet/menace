@@ -37,11 +37,12 @@ export class TttBoardComponent implements OnInit {
   }
 
   nextGame() {
-    if (this.result) {
+    if (!this.result) {
       return;
     }
 
     this.board.reset();
+    this.result = undefined;
   }
 
 }

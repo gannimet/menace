@@ -33,7 +33,7 @@ export enum Result {
 
 export class Board {
 
-  state: SquareState[];
+  state: SquareState[] = new Array(9);
   whoseTurn = SquareState.Player;
   resultEvents = new EventEmitter<Result>();
 
@@ -81,11 +81,7 @@ export class Board {
   }
 
   reset() {
-    this.state = [
-      SquareState.Free, SquareState.Free, SquareState.Free,
-      SquareState.Free, SquareState.Free, SquareState.Free,
-      SquareState.Free, SquareState.Free, SquareState.Free,
-    ];
+    this.state.fill(SquareState.Free);
     this.whoseTurn = SquareState.Player;
   }
 
@@ -199,15 +195,15 @@ export class Menace {
     console.log('bead list for reference board:', beadList);
 
     // Pick move at random
-    const randomMove = beadList[Math.floor(Math.random() * beadList.length)]; // TODO: consider weighted random picking
+    const randomMove = this.pickRandomMoveFromBeadList(beadList);
     console.log('randomMove:', randomMove);
-    const translatedIndex = permutationInfo[1].indexOf(randomMove.field);
+    const translatedIndex = permutationInfo[1].indexOf(randomMove);
     console.log('translatedIndex:', translatedIndex);
     const fieldCoords = convertIndexToFieldCoordinates(translatedIndex);
     console.log('field coords for random move:', fieldCoords);
 
     this.board.recordMove(fieldCoords.row, fieldCoords.col);
-    this.currentGameRecord.set(randomMove.field, permutationInfo);
+    this.currentGameRecord.set(randomMove, permutationInfo);
     console.groupEnd();
   }
 
@@ -227,6 +223,22 @@ export class Menace {
     }
 
     return this.beadMap.get(permutationInfo[0]);
+  }
+
+  private pickRandomMoveFromBeadList(beadList: BeadDescriptor[]): number {
+    const allMoves = [];
+
+    beadList.forEach((descriptor: BeadDescriptor) => {
+      for (let i = 0; i < descriptor.numberOfBeads; i++) {
+        allMoves.push(descriptor.field);
+      }
+    });
+
+    if (allMoves.length > 0) {
+      return allMoves[Math.floor(Math.random() * beadList.length)];
+    }
+
+    return -1;
   }
 
 }
