@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { Board, SquareState, convertFieldCoordinatesToIndex, Menace, Result } from '../../menace/menace';
 
 @Component({
@@ -29,11 +29,11 @@ export class TttBoardComponent implements OnInit {
 
     this.board.recordMove(row, col);
 
-    setTimeout(() => {
-      if (!this.result) {
+    if (!this.result) {
+      setTimeout(() => {
         this.menace.takeTurn();
-      }
-    }, 2000);
+      }, 0);
+    }
   }
 
   nextGame() {

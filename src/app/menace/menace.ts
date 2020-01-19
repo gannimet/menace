@@ -1,5 +1,6 @@
 import permutationMappings from '../../assets/permutation-mappings.json';
 import { EventEmitter } from '@angular/core';
+import { menaceConfig } from 'src/config/menace-config.js';
 
 export enum SquareState {
   Menace = 'X',
@@ -99,11 +100,14 @@ export class Board {
   }
 
   recordMove(row: number, col: number): boolean {
+    console.log(`board trying to record move (${row}, ${col}) for ${this.whoseTurn}`);
     if (this.checkResult()) {
+      // Game has already ended
       return false;
     }
 
     if (row < 0 || row > 2 || col < 0 || col > 2) {
+      // Move is out of bounds
       return false;
     }
 
@@ -121,6 +125,7 @@ export class Board {
     } else {
       this.whoseTurn = SquareState.Menace;
     }
+    console.log('Next turn for:', this.whoseTurn);
 
     // Check whether the game is decided
     const result = this.checkResult();
@@ -162,7 +167,7 @@ export class Board {
 export class Menace {
 
   beadMap: Map<number, BeadDescriptor[]> = new Map([]);
-  currentGameRecord: Map<number, any[]> = new Map([]);
+  currentGameRecord: Map<number, [number, number[]]> = new Map([]);
 
   constructor(private board: Board) {
     this.init();
@@ -170,13 +175,37 @@ export class Menace {
 
   private init() {
     this.board.resultEvents.subscribe((result: Result) => {
-      const successForMenace = [Result.Menace, Result.Draw].includes(result);
+      console.group('Result registered');
+      console.log('Result is:', result);
+      let balance = 0;
 
-      if (!successForMenace) {
-        this.currentGameRecord.forEach((permutationInfo: any[], boardNumber: number) => {
-
-        });
+      switch (result) {
+        case Result.Menace:
+          balance = menaceConfig.winningReward;
+          break;
+        case Result.Draw:
+          balance = menaceConfig.drawingReward;
+          break;
+        case Result.Player:
+          balance = menaceConfig.losingPunishment;
+          break;
       }
+
+      let beadList: BeadDescriptor[];
+      let currentDescriptor: BeadDescriptor;
+      this.currentGameRecord.forEach((permutationInfo: [number, number[]], moveIndex: number) => {
+        beadList = this.beadMap.get(permutationInfo[0]);
+        currentDescriptor = beadList.find((desc: BeadDescriptor) => {
+          return desc.field === moveIndex;
+        });
+
+        currentDescriptor.numberOfBeads = Math.max(
+          0, currentDescriptor.numberOfBeads + balance
+        );
+        console.log(`applying balance ${balance} to board ${permutationInfo[0]} and move ${moveIndex}`);
+        console.log('new beadList:', beadList);
+      });
+      console.groupEnd();
     });
   }
 
@@ -197,6 +226,13 @@ export class Menace {
     // Pick move at random
     const randomMove = this.pickRandomMoveFromBeadList(beadList);
     console.log('randomMove:', randomMove);
+
+    if (randomMove < 0) {
+      console.log('MENACE RESIGNS because it ran out of beads');
+      console.groupEnd();
+      return;
+    }
+
     const translatedIndex = permutationInfo[1].indexOf(randomMove);
     console.log('translatedIndex:', translatedIndex);
     const fieldCoords = convertIndexToFieldCoordinates(translatedIndex);
@@ -207,7 +243,7 @@ export class Menace {
     console.groupEnd();
   }
 
-  private getBeadsForReferenceBoard(permutationInfo: any[]): BeadDescriptor[] {
+  private getBeadsForReferenceBoard(permutationInfo: [number, number[]]): BeadDescriptor[] {
     if (!this.beadMap.has(permutationInfo[0])) {
       const beadDescriptorList: BeadDescriptor[] = this
         .board
@@ -235,7 +271,8 @@ export class Menace {
     });
 
     if (allMoves.length > 0) {
-      return allMoves[Math.floor(Math.random() * beadList.length)];
+      console.log('picking randomly from moves:', allMoves);
+      return allMoves[Math.floor(Math.random() * allMoves.length)];
     }
 
     return -1;
